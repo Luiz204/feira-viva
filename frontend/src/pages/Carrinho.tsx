@@ -101,8 +101,8 @@ export default function Carrinho() {
                 </div>
                 <ul className="divide-y divide-palha-200">
                   {g.itens.map((i) => (
-                    <li key={i.productId} className="flex items-center gap-3 py-3">
-                      <div className="min-w-0 flex-1">
+                    <li key={i.productId} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+                      <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
                         <p className="truncate font-medium">{i.nome}</p>
                         <p className="text-xs text-folha-900/60">
                           {brl(i.preco)} / {i.unidade}
@@ -119,7 +119,7 @@ export default function Carrinho() {
                           +
                         </button>
                       </div>
-                      <p className="w-20 text-right text-sm font-semibold">{brl(subtotal(i))}</p>
+                      <p className="ml-auto w-20 text-right text-sm font-semibold sm:ml-0">{brl(subtotal(i))}</p>
                       <button type="button" aria-label={`Remover ${i.nome}`} onClick={() => remover(i.productId)} className="text-folha-900/40 hover:text-terra-600">
                         ×
                       </button>
