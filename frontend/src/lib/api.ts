@@ -1,6 +1,14 @@
 import type { Fair, FairDetail, Me, Meta, Order, OrderCreated, ProducerDetail, Product } from '../types'
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000'
+type Sessao = { token: string; user: Me }
+
+const BASE_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000').replace(/\/$/, '')
+
+/** Fotos salvas na API voltam como caminho relativo ("/images/..."). */
+export function fotoUrl(url: string | null): string | null {
+  if (!url) return null
+  return url.startsWith('/') ? `${BASE_URL}${url}` : url
+}
 
 let getToken: () => string | null = () => null
 export function setTokenGetter(fn: () => string | null) {
@@ -28,7 +36,7 @@ function mensagemDeErro(body: unknown): string {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
-  if (init.body) headers.set('Content-Type', 'application/json')
+  if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   const token = getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
@@ -47,6 +55,16 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 const json = (data: unknown) => JSON.stringify(data)
 
 export const api = {
+  health: () => request<{ status: string; banco: string }>('/health'),
+  entrar: (email: string, senha: string) =>
+    request<Sessao>('/auth/entrar', { method: 'POST', body: json({ email, senha }) }),
+  cadastrar: (nome: string, email: string, senha: string) =>
+    request<Sessao>('/auth/cadastro', { method: 'POST', body: json({ nome, email, senha }) }),
+  enviarFoto: (arquivo: Blob) => {
+    const form = new FormData()
+    form.append('arquivo', arquivo, 'foto.jpg')
+    return request<{ url: string }>('/me/fotos', { method: 'POST', body: form })
+  },
   meta: () => request<Meta>('/meta'),
   vitrine: (params: { q?: string; categoria?: string; feira_id?: string }) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][])

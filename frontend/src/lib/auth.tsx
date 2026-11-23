@@ -1,71 +1,73 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Me } from '../types'
 import { api, setTokenGetter } from './api'
-import { supabase } from './supabase'
 
 type AuthState = {
   user: Me | null
   loading: boolean
+  /** true quando a API roda sem banco (dados de exemplo). */
   demo: boolean
   entrar: (email: string, senha: string) => Promise<void>
-  cadastrar: (nome: string, email: string, senha: string) => Promise<{ precisaConfirmar: boolean }>
-  entrarDemo: (perfilId: string) => Promise<void>
-  sair: () => Promise<void>
+  cadastrar: (nome: string, email: string, senha: string) => Promise<void>
+  sair: () => void
   recarregar: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
-const DEMO_KEY = 'feiraviva:demo-token'
+const TOKEN_KEY = 'feiraviva:token'
 
-
-function lerDemo(): string | null {
+function lerToken(): string | null {
   try {
-    return localStorage.getItem(DEMO_KEY)
+    return localStorage.getItem(TOKEN_KEY)
   } catch {
     return null
   }
 }
 
+function salvarToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    /* navegação privada: a sessão fica só nesta aba */
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const demo = supabase === null
-  const token = useRef<string | null>(demo ? lerDemo() : null)
+  const token = useRef<string | null>(lerToken())
   const [user, setUser] = useState<Me | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(token.current !== null)
+  const [demo, setDemo] = useState(false)
 
   useEffect(() => setTokenGetter(() => token.current), [])
 
+  useEffect(() => {
+    api
+      .health()
+      .then((h) => setDemo(h.banco !== 'postgresql'))
+      .catch(() => undefined)
+  }, [])
+
   const recarregar = useCallback(async () => {
-    if (!token.current) {
-      setUser(null)
-      return
-    }
+    if (!token.current) return
     try {
       setUser(await api.me())
     } catch {
       token.current = null
+      salvarToken(null)
       setUser(null)
     }
   }, [])
 
   useEffect(() => {
-    if (demo) {
-      recarregar().finally(() => setLoading(false))
-      return
-    }
-    const client = supabase!
-    client.auth.getSession().then(({ data }) => {
-      token.current = data.session?.access_token ?? null
-      recarregar().finally(() => setLoading(false))
-    })
-    const { data } = client.auth.onAuthStateChange((_evento, sessao) => {
-      const novo = sessao?.access_token ?? null
-      if (novo !== token.current) {
-        token.current = novo
-        void recarregar()
-      }
-    })
-    return () => data.subscription.unsubscribe()
-  }, [demo, recarregar])
+    if (token.current) void recarregar().finally(() => setLoading(false))
+  }, [recarregar])
+
+  const iniciarSessao = useCallback((novoToken: string, perfil: Me) => {
+    token.current = novoToken
+    salvarToken(novoToken)
+    setUser(perfil)
+  }, [])
 
   const value = useMemo<AuthState>(
     () => ({
@@ -74,40 +76,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       demo,
       recarregar,
       async entrar(email, senha) {
-        const { data, error } = await supabase!.auth.signInWithPassword({ email, password: senha })
-        if (error) throw new Error(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos' : error.message)
-        token.current = data.session.access_token
-        await recarregar()
+        const sessao = await api.entrar(email, senha)
+        iniciarSessao(sessao.token, sessao.user)
       },
       async cadastrar(nome, email, senha) {
-        const { data, error } = await supabase!.auth.signUp({ email, password: senha, options: { data: { nome } } })
-        if (error) throw new Error(error.message)
-        if (!data.session) return { precisaConfirmar: true }
-        token.current = data.session.access_token
-        await recarregar()
-        return { precisaConfirmar: false }
+        const sessao = await api.cadastrar(nome, email, senha)
+        iniciarSessao(sessao.token, sessao.user)
       },
-      async entrarDemo(perfilId) {
-        token.current = `dev:${perfilId}`
-        try {
-          localStorage.setItem(DEMO_KEY, token.current)
-        } catch {
-          /* navegação privada: segue só em memória */
-        }
-        await recarregar()
-      },
-      async sair() {
-        if (supabase) await supabase.auth.signOut()
-        try {
-          localStorage.removeItem(DEMO_KEY)
-        } catch {
-          /* ignora */
-        }
+      sair() {
         token.current = null
+        salvarToken(null)
         setUser(null)
       },
     }),
-    [user, loading, demo, recarregar],
+    [user, loading, demo, recarregar, iniciarSessao],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

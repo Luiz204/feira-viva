@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { fotoUrl } from '../lib/api'
 
 export function Spinner({ label = 'Carregando…' }: { label?: string }) {
   return (
@@ -40,7 +41,7 @@ const CORES = ['bg-folha-100 text-folha-700', 'bg-palha-100 text-terra-600', 'bg
 
 /** Imagem do produto ou um bloco com as iniciais quando não há foto. */
 export function Foto({ src, alt, className = '' }: { src: string | null; alt: string; className?: string }) {
-  if (src) return <img src={src} alt={alt} loading="lazy" className={`object-cover ${className}`} />
+  if (src) return <img src={fotoUrl(src)!} alt={alt} loading="lazy" className={`object-cover ${className}`} />
   const cor = CORES[alt.length % CORES.length]
   const iniciais = alt
     .split(' ')

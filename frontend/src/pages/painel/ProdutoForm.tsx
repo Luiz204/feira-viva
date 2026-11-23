@@ -1,14 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { ErrorBox, Foto } from '../../components/ui'
 import { api } from '../../lib/api'
-import { useAuth } from '../../lib/auth'
-import { enviarFoto } from '../../lib/supabase'
+import { prepararFoto } from '../../lib/foto'
 import type { Meta, Product } from '../../types'
 
 type Props = { meta: Meta; produto?: Product; onSalvo: (p: Product) => void; onCancelar: () => void }
 
 export default function ProdutoForm({ meta, produto, onSalvo, onCancelar }: Props) {
-  const { user, demo } = useAuth()
   const [form, setForm] = useState({
     nome: produto?.nome ?? '',
     categoria: produto?.categoria ?? meta.categorias[0],
@@ -23,11 +21,12 @@ export default function ProdutoForm({ meta, produto, onSalvo, onCancelar }: Prop
   const set = (campo: keyof typeof form, valor: string) => setForm((f) => ({ ...f, [campo]: valor }))
 
   async function trocarFoto(arquivo: File | undefined) {
-    if (!arquivo || !user) return
+    if (!arquivo) return
     setErro(null)
     setEnviandoFoto(true)
     try {
-      set('foto_url', await enviarFoto(arquivo, user.id))
+      const { url } = await api.enviarFoto(await prepararFoto(arquivo))
+      set('foto_url', url)
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Falha no upload')
     } finally {
@@ -90,16 +89,14 @@ export default function ProdutoForm({ meta, produto, onSalvo, onCancelar }: Prop
         </label>
         <div className="flex items-center gap-4 sm:col-span-2">
           <Foto src={form.foto_url || null} alt={form.nome || 'Produto'} className="h-20 w-20 shrink-0 rounded-xl" />
-          {demo ? (
-            <label className="flex-1">
-              <span className="label">Link da foto (opcional)</span>
-              <input className="input" type="url" value={form.foto_url} onChange={(e) => set('foto_url', e.target.value)} placeholder="https://…" />
-            </label>
-          ) : (
-            <label className="btn-ghost cursor-pointer">
-              {enviandoFoto ? 'Enviando…' : form.foto_url ? 'Trocar foto' : 'Escolher foto'}
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => trocarFoto(e.target.files?.[0])} />
-            </label>
+          <label className="btn-ghost cursor-pointer">
+            {enviandoFoto ? 'Enviando…' : form.foto_url ? 'Trocar foto' : 'Escolher foto'}
+            <input type="file" accept="image/*" className="sr-only" onChange={(e) => trocarFoto(e.target.files?.[0])} />
+          </label>
+          {form.foto_url && (
+            <button type="button" onClick={() => set('foto_url', '')} className="text-sm text-folha-900/50 hover:text-terra-600">
+              Remover
+            </button>
           )}
         </div>
       </div>

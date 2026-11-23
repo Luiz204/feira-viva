@@ -1,4 +1,4 @@
-"""Repositório em memória: usado nos testes e para rodar a API sem Supabase."""
+"""Repositório em memória: usado nos testes e para rodar a API sem banco (modo demonstração)."""
 
 import uuid
 from copy import deepcopy
@@ -18,6 +18,18 @@ class MemoryRepository:
         self.fairs: dict[str, Row] = {}
         self.fair_producers: set[tuple[str, str]] = set()  # (feira_id, produtor_id)
         self.orders: dict[str, Row] = {}
+        self.users: dict[str, Row] = {}
+        self.images: dict[str, Row] = {}
+
+    # ---------------------------------------------------------- usuários
+    def create_user(self, *, email: str, senha_hash: str, nome: str, role: str) -> Row:
+        user_id = str(uuid.uuid4())
+        self.users[email] = {"id": user_id, "email": email, "senha_hash": senha_hash, "criado_em": _now()}
+        return self.add_profile(id=user_id, nome=nome, role=role)
+
+    def get_user_by_email(self, email: str) -> Row | None:
+        row = self.users.get(email)
+        return deepcopy(row) if row else None
 
     # ------------------------------------------------------------ perfis
     def add_profile(self, **data) -> Row:
@@ -143,3 +155,12 @@ class MemoryRepository:
         rows = [o for o in self.orders.values() if o["produtor_id"] == produtor_id]
         rows.sort(key=lambda r: r["criado_em"], reverse=True)
         return deepcopy(rows)
+
+    # ------------------------------------------------------------- fotos
+    def save_image(self, owner_id: str, content_type: str, dados: bytes) -> str:
+        image_id = str(uuid.uuid4())
+        self.images[image_id] = {"owner_id": owner_id, "content_type": content_type, "dados": dados}
+        return image_id
+
+    def get_image(self, image_id: str) -> Row | None:
+        return self.images.get(image_id)

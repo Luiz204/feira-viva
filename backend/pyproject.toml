@@ -8,3 +8,6 @@ ignore = ["B008"]  # Depends() em parâmetros é o padrão do FastAPI
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.vercel]
+entrypoint = "app.main:app"

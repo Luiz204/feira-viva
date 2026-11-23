@@ -5,7 +5,7 @@ from datetime import datetime, time
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 CATEGORIAS = (
     "Frutas",
@@ -46,6 +46,18 @@ def normalizar_whatsapp(valor: str) -> str:
     if ddd < 11 or ddd > 99:
         raise ValueError("DDD inválido")
     return "55" + digitos
+
+
+# ------------------------------------------------------------------ login
+class Cadastro(BaseModel):
+    nome: str = Field(min_length=2, max_length=80)
+    email: EmailStr
+    senha: str = Field(min_length=6, max_length=72)  # bcrypt usa no máximo 72 bytes
+
+
+class Login(BaseModel):
+    email: EmailStr
+    senha: str = Field(min_length=1, max_length=72)
 
 
 # ----------------------------------------------------------------- perfis
@@ -220,3 +232,12 @@ class OrderCreated(Order):
 
 class AdminToggle(BaseModel):
     ativo: bool
+
+
+class Sessao(BaseModel):
+    token: str
+    user: Me
+
+
+class FotoEnviada(BaseModel):
+    url: str

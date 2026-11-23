@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import get_settings
-from .routers import admin, me, public
+from .routers import admin, auth, images, me, public
 from .services.errors import DomainError
 
 app = FastAPI(
@@ -28,9 +28,11 @@ async def domain_error_handler(_: Request, exc: DomainError) -> JSONResponse:
 
 @app.get("/health", tags=["infra"])
 def health() -> dict:
-    return {"status": "ok", "banco": "supabase" if get_settings().use_supabase else "memória (demonstração)"}
+    return {"status": "ok", "banco": "memória (demonstração)" if get_settings().demo else "postgresql"}
 
 
+app.include_router(auth.router)
 app.include_router(public.router)
+app.include_router(images.router)
 app.include_router(me.router)
 app.include_router(admin.router)

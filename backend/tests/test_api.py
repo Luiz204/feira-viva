@@ -9,7 +9,7 @@ NOVO_PRODUTO = {"nome": "Banana prata", "categoria": "Frutas", "preco": "6.50", 
 
 
 def _produto(repo, nome):
-    return next(p for p in repo.products.values() if p["nome"] == nome)
+    return next(p for p in repo.list_products(only_active=False) if p["nome"] == nome)
 
 
 # ------------------------------------------------------------- acesso
@@ -74,7 +74,7 @@ def test_ct09_produto_esgotado_some_da_vitrine(client, repo, produtor1):
 def test_ct10_excluir_produto(client, repo, produtor1):
     tomate = _produto(repo, "Tomate")
     assert client.delete(f"/me/products/{tomate['id']}", headers=produtor1).status_code == 204
-    assert tomate["id"] not in repo.products
+    assert repo.get_product(tomate["id"]) is None
 
 
 # ------------------------------------------------------- vitrine/busca
@@ -95,7 +95,7 @@ def test_ct13_filtro_por_feira(client):
 
 
 def test_ct14_produtor_sem_whatsapp_nao_aparece(client, repo):
-    repo.profiles[PRODUTOR_2]["whatsapp"] = None
+    repo.update_profile(PRODUTOR_2, {"whatsapp": None})
     produtores = {p["produtor_id"] for p in client.get("/products").json()}
     assert PRODUTOR_2 not in produtores
 
@@ -169,7 +169,7 @@ def test_ct19_pedido_com_produtos_de_dois_produtores_e_recusado(client, repo):
 
 def test_ct20_pedido_de_produto_esgotado_e_recusado(client, repo):
     alface = _produto(repo, "Alface crespa")
-    repo.products[alface["id"]]["disponivel"] = False
+    repo.update_product(alface["id"], {"disponivel": False})
     r = client.post(
         "/orders",
         json={
@@ -217,3 +217,10 @@ def test_ct24_admin_desativa_produtor_e_ele_some(client, admin, produtor2):
     produtores = {p["produtor_id"] for p in client.get("/products").json()}
     assert PRODUTOR_2 not in produtores
     assert client.get("/me", headers=produtor2).status_code == 403
+
+
+# ---------------------------------------------------- robustez de ids
+def test_ct38_id_malformado_retorna_404(client, produtor1):
+    assert client.get("/producers/nao-e-um-uuid").status_code == 404
+    assert client.get("/fairs/123").status_code == 404
+    assert client.patch("/me/products/xyz", json={"preco": "1"}, headers=produtor1).status_code == 404

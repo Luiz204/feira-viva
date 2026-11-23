@@ -24,7 +24,7 @@ export default function Layout() {
     <div className="flex min-h-dvh flex-col">
       {demo && (
         <div className="bg-folha-900 px-4 py-1.5 text-center text-xs text-palha-100">
-          Modo demonstração: dados de exemplo, sem Supabase configurado.
+          Modo demonstração: dados de exemplo que somem quando a API reinicia.
         </div>
       )}
       <header className="sticky top-0 z-20 border-b border-palha-200 bg-palha-50/90 backdrop-blur">

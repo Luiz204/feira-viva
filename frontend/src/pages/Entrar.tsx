@@ -2,16 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ErrorBox, PageTitle } from '../components/ui'
 import { useAuth } from '../lib/auth'
-import { USUARIOS_DEMO } from '../lib/demo'
 
 export default function Entrar() {
-  const { user, demo, entrar, cadastrar, entrarDemo } = useAuth()
+  const { user, demo, entrar, cadastrar } = useAuth()
   const [modo, setModo] = useState<'entrar' | 'cadastrar'>('entrar')
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(false)
 
   if (user) return <Navigate to={user.role === 'admin' ? '/admin' : '/painel'} replace />
@@ -19,14 +17,10 @@ export default function Entrar() {
   async function enviar(e: FormEvent) {
     e.preventDefault()
     setErro(null)
-    setAviso(null)
     setCarregando(true)
     try {
       if (modo === 'entrar') await entrar(email, senha)
-      else {
-        const { precisaConfirmar } = await cadastrar(nome, email, senha)
-        if (precisaConfirmar) setAviso('Enviamos um link de confirmação para o seu e-mail. Confirme e depois entre.')
-      }
+      else await cadastrar(nome, email, senha)
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível continuar')
     } finally {
@@ -40,19 +34,19 @@ export default function Entrar() {
         Cadastre seus produtos e receba pedidos no seu WhatsApp.
       </PageTitle>
 
-      {demo ? (
-        <div className="card flex flex-col gap-3 p-5">
-          <p className="text-sm text-folha-900/70">
-            O Supabase não está configurado, então o login usa contas de exemplo. Escolha uma:
-          </p>
-          {USUARIOS_DEMO.map((u) => (
-            <button key={u.id} type="button" onClick={() => entrarDemo(u.id)} className="btn-ghost justify-between">
-              <span>{u.nome}</span>
-              <span className="text-xs font-normal text-folha-900/50">{u.papel}</span>
-            </button>
-          ))}
+      {demo && modo === 'entrar' && (
+        <div className="mb-4 rounded-xl border border-folha-100 bg-folha-50 px-4 py-3 text-sm">
+          <p className="mb-2 font-semibold">Modo demonstração: use uma conta de exemplo</p>
+          <div className="flex flex-wrap gap-2">
+            {['jose@demo.com', 'maria@demo.com', 'admin@demo.com'].map((e) => (
+              <button key={e} type="button" onClick={() => { setEmail(e); setSenha('feiraviva') }} className="btn-ghost py-1.5 text-xs">
+                {e}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-folha-900/60">Senha: feiraviva</p>
         </div>
-      ) : (
+      )}
         <form onSubmit={enviar} className="card flex flex-col gap-4 p-5">
           {modo === 'cadastrar' && (
             <label>
@@ -77,7 +71,6 @@ export default function Entrar() {
             />
           </label>
           {erro && <ErrorBox message={erro} />}
-          {aviso && <p className="rounded-xl bg-folha-50 px-4 py-3 text-sm">{aviso}</p>}
           <button className="btn-primary" disabled={carregando}>
             {carregando ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta'}
           </button>
@@ -85,7 +78,6 @@ export default function Entrar() {
             {modo === 'entrar' ? 'Ainda não tem conta? Cadastre-se' : 'Já tem conta? Entrar'}
           </button>
         </form>
-      )}
     </div>
   )
 }
