@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  --color-folha-50: #eef4ea;
+  --color-folha-100: #d9e7d1;
+  --color-folha-600: #3f7a4b;
+  --color-folha-700: #2f5d3a;
+  --color-folha-900: #1c3523;
+  --color-terra-500: #c4683b;
+  --color-terra-600: #a9532a;
+  --color-palha-50: #fbf8f1;
+  --color-palha-100: #f4ecd8;
+  --color-palha-200: #e8dcc0;
+  --color-zap: #1f9d55;
+}
+
+body {
+  @apply bg-palha-50 text-folha-900 font-sans antialiased;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-folha-700 text-palha-50 hover:bg-folha-900;
+}
+@utility btn-ghost {
+  @apply btn border border-palha-200 bg-white text-folha-900 hover:border-folha-600;
+}
+@utility btn-zap {
+  @apply btn bg-zap text-white hover:brightness-95;
+}
+@utility input {
+  @apply w-full rounded-xl border border-palha-200 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-folha-900/40 focus:border-folha-600 focus:ring-2 focus:ring-folha-100;
+}
+@utility label {
+  @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-folha-900/60;
+}
+@utility card {
+  @apply rounded-2xl border border-palha-200 bg-white;
+}
