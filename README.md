@@ -3,6 +3,8 @@
 MVP desenvolvido para a disciplina **Estágio Curricular Supervisionado — Fábrica de Software I** (iCEV, Engenharia de Software, Turma Ada).
 Aluno: Luiz Guilherme Aguiar de Almeida.
 
+**No ar:** [feira-viva-ruby.vercel.app](https://feira-viva-ruby.vercel.app) · API: [feira-viva-api.vercel.app/docs](https://feira-viva-api.vercel.app/docs)
+
 O consumidor vê os produtos da agricultura familiar e das feiras livres, monta um carrinho por produtor e
 envia o pedido pronto para o **WhatsApp** do produtor. O produtor cadastra perfil, produtos e as feiras
 onde vende. O administrador mantém as feiras e modera produtores.
