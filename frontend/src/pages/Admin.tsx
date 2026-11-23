@@ -61,7 +61,7 @@ function Feiras() {
     setForm((f) => ({ ...f, dias_semana: f.dias_semana.includes(d) ? f.dias_semana.filter((x) => x !== d) : [...f.dias_semana, d] }))
 
   return (
-    <section>
+    <section className="min-w-0">
       <h2 className="mb-3 font-display text-xl font-semibold">Feiras</h2>
       <form onSubmit={salvar} className="card mb-4 grid gap-3 p-4 sm:grid-cols-2">
         <label className="sm:col-span-2">
@@ -146,7 +146,7 @@ function Produtores() {
   }
 
   return (
-    <section>
+    <section className="min-w-0">
       <h2 className="mb-3 font-display text-xl font-semibold">Produtores</h2>
       {lista.error && <ErrorBox message={lista.error} />}
       {lista.loading && <Spinner />}
